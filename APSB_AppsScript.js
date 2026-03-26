@@ -418,12 +418,19 @@ function getUltimaSemana(seccionFiltro) {
 
   var datos   = hoja.getDataRange().getValues();
   var headers = datos[0];
+  var colSemana = headers.indexOf('semana');
+
+  // Convertir a string para comparación segura (Sheets guarda fechas como Date)
+  function toStr(v) {
+    if (!v) return '';
+    if (v instanceof Date) return Utilities.formatDate(v, 'America/Bogota', 'yyyy-MM-dd');
+    return String(v);
+  }
 
   // Encontrar la semana más reciente
-  var colSemana = headers.indexOf('semana');
-  var semanas   = [];
+  var semanas = [];
   for (var i = 1; i < datos.length; i++) {
-    var s = datos[i][colSemana];
+    var s = toStr(datos[i][colSemana]);
     if (s && semanas.indexOf(s) === -1) semanas.push(s);
   }
   semanas.sort().reverse();
@@ -432,7 +439,7 @@ function getUltimaSemana(seccionFiltro) {
   // Filtrar filas de la última semana
   var filas = datos.filter(function(row, idx) {
     if (idx === 0) return false;
-    if (row[colSemana] !== ultimaSemana) return false;
+    if (toStr(row[colSemana]) !== ultimaSemana) return false;
     if (seccionFiltro && row[headers.indexOf('seccion')] !== seccionFiltro) return false;
     return true;
   });
