@@ -561,8 +561,10 @@ function cargarDesdeSheetsOLocal() {
     return;
   }
   mostrarLoader('Cargando datos desde Google Sheets...');
-  fetch(APPS_SCRIPT_URL + '?mode=current')
-    .then(function(r) { return r.json(); })
+  var ctrl = new AbortController();
+  var timeout = setTimeout(function() { ctrl.abort(); }, 8000);
+  fetch(APPS_SCRIPT_URL + '?mode=current', { signal: ctrl.signal })
+    .then(function(r) { clearTimeout(timeout); return r.json(); })
     .then(function(resp) {
       if (resp.ok && resp.data) {
         DATA = resp.data;
@@ -574,6 +576,7 @@ function cargarDesdeSheetsOLocal() {
       } else { throw new Error(resp.error || 'Sin datos'); }
     })
     .catch(function(err) {
+      clearTimeout(timeout);
       console.warn('Error Sheets:', err);
       mostrarLoader('Sin conexión — cargando datos guardados...');
       setTimeout(cargarLocal, 1200);
