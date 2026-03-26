@@ -475,7 +475,7 @@ var ACTIVE_CLASSES = {regular:'active-regular',urgencia:'active-urgencia',estudi
 
 function setSection(section) {
   currentSection = section;
-  currentProject = DATA[section][0].id;
+  currentProject = DATA[section] && DATA[section].length > 0 ? DATA[section][0].id : null;
   Object.keys(TABS).forEach(function(s) {
     document.getElementById(TABS[s]).className = 'section-tab' + (s === section ? ' ' + ACTIVE_CLASSES[s] : '');
   });
