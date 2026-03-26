@@ -352,14 +352,27 @@ function procesarRAW() {
       };
     });
 
-    // 4. Construir prompt y llamar a OpenAI
-    var prompt    = buildPrompt(JSON.stringify(tareasSimplificadas, null, 2), data.fechaExportacion);
-    Logger.log('Llamando a OpenAI...');
-    var proyectos = llamarOpenAI(prompt);
+    // 4. Chunkear en lotes de 5 y llamar a OpenAI por cada lote
+    var CHUNK = 5;
+    var proyectosTodos = [];
+    var totalChunks = Math.ceil(tareasSimplificadas.length / CHUNK);
+    for (var i = 0; i < tareasSimplificadas.length; i += CHUNK) {
+      var chunk = tareasSimplificadas.slice(i, i + CHUNK);
+      var numChunk = Math.floor(i / CHUNK) + 1;
+      Logger.log('OpenAI — chunk ' + numChunk + '/' + totalChunks + ' (' + chunk.length + ' tareas)');
+      var prompt = buildPrompt(JSON.stringify(chunk, null, 2), data.fechaExportacion);
+      var resultado = llamarOpenAI(prompt);
+      proyectosTodos = proyectosTodos.concat(resultado);
+    }
 
-    Logger.log('Proyectos procesados por IA: ' + proyectos.length);
+    // 5. Deduplicar por id (en caso de tareas repetidas entre chunks)
+    var mapa = {};
+    proyectosTodos.forEach(function(p) { mapa[p.id] = p; });
+    var proyectos = Object.keys(mapa).map(function(k) { return mapa[k]; });
 
-    // 5. Escribir en hoja PROCESADA
+    Logger.log('Proyectos únicos procesados: ' + proyectos.length);
+
+    // 6. Escribir en hoja PROCESADA
     escribirProcesada(proyectos, data.fechaExportacion);
 
     Logger.log('✓ Proceso completado exitosamente');
